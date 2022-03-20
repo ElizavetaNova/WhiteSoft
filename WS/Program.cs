@@ -23,15 +23,13 @@ namespace WS
             {
                 string json = r.ReadToEnd();
                 swaps = JsonConvert.DeserializeObject<List<swap>>(json);
-                foreach (var el in swaps)
-                    Console.WriteLine($"new: {el.replacement}  old: {el.source}");
+                
             }
             using (StreamReader r = new StreamReader(datafile))
             {
                 string json = r.ReadToEnd();
                 messages = JsonConvert.DeserializeObject<List<string>>(json);
-                foreach (var el in messages)
-                    Console.WriteLine($"text: {el}");
+                
             }
 
             for (int i=0; i<swaps.Count; i++)
@@ -45,8 +43,7 @@ namespace WS
                     }
                 }
             }
-            foreach (var el in swaps)
-                Console.WriteLine($"replacementNew: {el.replacement}         swapto {el.source}");
+            
             int curcount = messages.Count;
             for (int i=0; i<curcount; i++)
             {
@@ -74,18 +71,8 @@ namespace WS
             {
                     JsonSerializer.SerializeAsync<List<string>>(fs, messages);
                 
-                Console.WriteLine("Data has been saved to file");
+                Console.WriteLine("Данные сохранены в файл dataNEW.json в папке /bin/debag/net5.0/");
             }
-
-            //StreamWriter streamWriter = new StreamWriter("dataNEW.json");
-            ////using (FileStream fs = new FileStream("dataNEW.json", FileMode.OpenOrCreate))
-            //{
-            //    //message mess = new Person("Tom", 37);
-            //    foreach(var m in messages)
-            //    {
-            //        streamWriter.WriteLine("\"" + m + "\"");
-            //    }
-            //    streamWriter.Close(); 
 
         }
     }
