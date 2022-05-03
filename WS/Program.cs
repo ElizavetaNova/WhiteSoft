@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Web.Helpers;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
+
 namespace WS
 {
     class Program
@@ -16,49 +17,22 @@ namespace WS
 
             string replacementfile = "replacement.json";
             string datafile = "data.json";
-            List<swap> swaps = new List<swap>();
-            List<string> messages = new List<string>();
 
-            using (StreamReader r = new StreamReader(replacementfile))
-            {
-                string json = r.ReadToEnd();
-                swaps = JsonConvert.DeserializeObject<List<swap>>(json);
-                
-            }
-            using (StreamReader r = new StreamReader(datafile))
-            {
-                string json = r.ReadToEnd();
-                messages = JsonConvert.DeserializeObject<List<string>>(json);
-                
-            }
+            ListSwaps listSwaps = new ListSwaps();
+            listSwaps.ReadJSONFileReplacement(replacementfile);
+            listSwaps.DeleteRepeateReplacement();
 
-            DeleteRepeateReplacement(swaps);
-            SearchReplaceMessage(messages, swaps);                        
+            ListMessage listMessage = new ListMessage();
+            listMessage.ReadJSONFileMessage(datafile);
 
-            using (FileStream fs = new FileStream("dataNEW.json", FileMode.OpenOrCreate))
-            {
-                    JsonSerializer.SerializeAsync<List<string>>(fs, messages);
-                
-                Console.WriteLine("Данные сохранены в файл dataNEW.json в папке /bin/debag/net5.0/");
-            }
+            listMessage.SearchReplaceMessage(listSwaps);
 
+            listMessage.WriteJSONFileDataNew();
+                      
         }
-
-        public static void DeleteRepeateReplacement(List<swap> swaps)
-        {
-            for (int i = 0; i < swaps.Count; i++)
-            {
-                for (int j = i + 1; j < swaps.Count; j++)
-                {
-                    if (swaps[i].replacement == swaps[j].replacement)
-                    {
-                        swaps.RemoveAt(i);
-                        break;
-                    }
-                }
-            }            
-        }
-        public static void SearchReplaceMessage(List<string> messages, List<swap> swaps)
+        
+                
+        public static void SearchReplaceMessage(List<string> messages, List<Swap> swaps)
         {
             int curcount = messages.Count;
             for (int i = 0; i < curcount; i++)
@@ -82,10 +56,94 @@ namespace WS
         }
         
     }
-    public class swap
+   
+    public class Swap
     {
         public string replacement { get; set; }
         public string source { get; set; }
+        
+        public Swap()
+        { }
+        public Swap(string replacement, string source)
+        {
+            this.replacement = replacement;
+            this.source = source;
+        }
     }
-    
+    public class ListSwaps
+    {
+        public List<Swap> Swaps;
+        public List<Swap> ReadJSONFileReplacement(string fileNameJSON)
+        {
+            using (StreamReader r = new StreamReader(fileNameJSON))
+            {
+                string json = r.ReadToEnd();
+                Swaps = JsonConvert.DeserializeObject<List<Swap>>(json);
+            }
+            return Swaps;
+        }
+        public List<Swap> DeleteRepeateReplacement()
+        {
+            for (int i = 0; i < Swaps.Count; i++)
+            {
+                for (int j = i + 1; j < Swaps.Count; j++)
+                {
+                    if (Swaps[i].replacement == Swaps[j].replacement)
+                    {
+                        Swaps.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+            return Swaps;
+        }
+    }
+    public class ListMessage
+    {
+        public List<string> messages;
+
+        public List<string> ReadJSONFileMessage(string fileNameJSON)
+        {
+            using (StreamReader r = new StreamReader(fileNameJSON))
+            {
+                string json = r.ReadToEnd();
+                messages = JsonConvert.DeserializeObject<List<string>>(json);
+            }
+            return messages;
+        }
+
+        public List<string> SearchReplaceMessage(ListSwaps listSwaps)
+        {
+            int curcount = messages.Count;
+            for (int i = 0; i < curcount; i++)
+            {
+                for (int k = listSwaps.Swaps.Count - 1; k >= 0; k--)
+                {
+                    if (messages[i].Contains(listSwaps.Swaps[k].replacement.ToString()))
+                    {
+                        if (listSwaps.Swaps[k].source == null)
+                        {
+                            messages.RemoveAt(i);
+                            curcount -= 1;
+                            if (i > 0) i--;
+                            break;
+                        }
+                        else
+                            messages[i] = messages[i].Replace(listSwaps.Swaps[k].replacement, listSwaps.Swaps[k].source);
+                    }
+                }
+            }
+            return messages;
+        }
+
+        public void WriteJSONFileDataNew()
+        {
+            using (FileStream fs = new FileStream("dataNEW.json", FileMode.OpenOrCreate))
+            {
+                JsonSerializer.SerializeAsync<List<string>>(fs, messages);
+
+                Console.WriteLine("Данные сохранены в файл dataNEW.json в папке /bin/debag/net5.0/");
+            }            
+        }
+    }
 }
